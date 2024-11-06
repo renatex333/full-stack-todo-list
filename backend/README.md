@@ -18,7 +18,7 @@ This backend project is part of a *full-stack* **to-do list** application. It is
 ## Features
 <!-- - User authentication and authorization. -->
 - CRUD operations for to-do items.
-- Integration with Redis for caching and session management.
+- Integration with Redis for items caching.
 
 ## License
 This project is licensed under the MIT License.
