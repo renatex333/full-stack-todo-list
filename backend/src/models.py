@@ -12,3 +12,10 @@ class Task(Base):
     title = Column(String, index=True)
     description = Column(String, nullable=True)
     completed = Column(Boolean, default=False)
+
+class User(Base):
+    """User model for authentication"""
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, index=True)
+    hashed_password = Column(String)

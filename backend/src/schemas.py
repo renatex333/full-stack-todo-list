@@ -27,3 +27,25 @@ class TaskRetrieve(BaseModel):
     class Config:
         """Pydantic configuration"""
         from_attributes = True
+
+class Token(BaseModel):
+    """Token schema"""
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    """TokenData schema"""
+    username: str | None = None
+
+class User(BaseModel):
+    """User schema for authentication"""
+    username: str
+
+class UserCreate(User):
+    """UserCreate schema"""
+    password: str
+
+class UserInDB(User):
+    """User schema for database"""
+    hashed_password: str
