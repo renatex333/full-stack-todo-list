@@ -1,5 +1,7 @@
 const apiUrl = "http://localhost:8000/tasks";
 
+let token = "";
+
 document.getElementById("task-title").addEventListener("keyup", function(event) {
     if (event.key === "Enter") {
         event.preventDefault();
@@ -16,7 +18,11 @@ document.getElementById("task-desc").addEventListener("keyup", function(event) {
 
 async function fetchTasks() {
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
         const tasks = await response.json();
         if (!tasks.length) {
             const taskList = document.getElementById("task-list");
@@ -52,8 +58,7 @@ async function addTask() {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin":"*",
-                "Access-Control-Allow-Methods":"POST,PATCH,OPTIONS"
+                "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify({ title, description })
         });
@@ -73,8 +78,7 @@ async function updateTask(taskId) {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin":"*",
-                "Access-Control-Allow-Methods":"POST,PATCH,OPTIONS"
+                "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify({ completed: !task.completed })
         });
@@ -87,7 +91,10 @@ async function updateTask(taskId) {
 async function deleteTask(taskId) {
     try {
         await fetch(`${apiUrl}/${taskId}`, {
-            method: "DELETE"
+            method: "DELETE",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
         });
         fetchTasks();
     } catch (error) {
@@ -96,3 +103,45 @@ async function deleteTask(taskId) {
 }
 
 document.addEventListener("DOMContentLoaded", fetchTasks);
+
+async function register(username, password) {
+    try {
+        await fetch(apiUrl + "/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username, password })
+        });
+        alert("User registered successfully");
+    } catch (error) {
+        console.error("Error registering user:", error);
+    }
+}
+
+async function login(username, password) {
+    try {
+        const response = await fetch(apiUrl + "/token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                username: username,
+                password: password
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Login failed, please check your credentials.");
+        }
+
+        const data = await response.json();
+        token = data.access_token;
+        alert("Successfully logged in!");
+        fetchTasks();
+    } catch (error) {
+        console.error("Error logging in:", error);
+        alert("Error logging in: " + error.message);
+    }
+}
