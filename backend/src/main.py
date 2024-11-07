@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from bleach import clean
 import redis
 
 load_dotenv(override=True)
@@ -48,7 +49,11 @@ def get_db():
 @app.post("/tasks/", response_model=schemas.TaskRetrieve)
 def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
     """Create a new task"""
-    db_task = models.Task(title=task.title, description=task.description, completed=task.completed)
+    db_task = models.Task(
+        title=clean(task.title),
+        description=clean(task.description),
+        completed=task.completed
+    )
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -58,9 +63,11 @@ def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
 @app.get("/tasks/{task_id}", response_model=schemas.TaskRetrieve)
 def get_task(task_id: int, db: Session = Depends(get_db)):
     """Get a task by its ID"""
-    if (cached_task := redis_client.get(f"task:{task_id}")) is not None:
+    cached_task = redis_client.get(f"task:{task_id}")
+    if cached_task is not None:
         return schemas.TaskRetrieve.parse_raw(cached_task)
-    if (db_task := db.query(models.Task).filter(models.Task.id == task_id).first()) is None:
+    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     redis_client.set(f"task:{db_task.id}", schemas.TaskRetrieve.from_orm(db_task).json())
     return db_task
@@ -68,12 +75,13 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
 @app.put("/tasks/{task_id}", response_model=schemas.TaskRetrieve)
 def update_task(task_id: int, task: schemas.TaskUpdate, db: Session = Depends(get_db)):
     """Update a task's status"""
-    if (db_task := db.query(models.Task).filter(models.Task.id == task_id).first()) is None:
+    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     if task.title is not None:
-        setattr(db_task, "title", task.title)
+        setattr(db_task, "title", clean(task.title))
     if task.description is not None:
-        setattr(db_task, "description", task.description)
+        setattr(db_task, "description", clean(task.description))
     if task.completed is not None:
         setattr(db_task, "completed", task.completed)
     db.commit()
@@ -84,7 +92,8 @@ def update_task(task_id: int, task: schemas.TaskUpdate, db: Session = Depends(ge
 @app.delete("/tasks/{task_id}", response_model=schemas.TaskRetrieve)
 def delete_task(task_id: int, db: Session = Depends(get_db)):
     """Delete a task"""
-    if (db_task := db.query(models.Task).filter(models.Task.id == task_id).first()) is None:
+    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     db.delete(db_task)
     db.commit()
@@ -94,6 +103,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
 @app.get("/tasks/", response_model=List[schemas.TaskRetrieve])
 def list_tasks(db: Session = Depends(get_db), limit: int = 100):
     """List all tasks"""
-    if (tasks := db.query(models.Task).limit(limit).all()) == []:
+    tasks = db.query(models.Task).limit(limit).all()
+    if tasks == []:
         raise HTTPException(status_code=404, detail="No tasks found")
     return tasks
