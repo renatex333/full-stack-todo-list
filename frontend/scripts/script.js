@@ -1,5 +1,19 @@
 const apiUrl = "http://localhost:8000/tasks";
 
+document.getElementById("task-title").addEventListener("keyup", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        document.querySelector(".task-input button").click();
+    }
+});
+
+document.getElementById("task-desc").addEventListener("keyup", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        document.querySelector(".task-input button").click();
+    }
+});
+
 async function fetchTasks() {
     try {
         const response = await fetch(apiUrl);
@@ -43,6 +57,8 @@ async function addTask() {
             },
             body: JSON.stringify({ title, description })
         });
+        document.getElementById("task-title").value = "";
+        document.getElementById("task-desc").value = "";
         fetchTasks();
     } catch (error) {
         console.error("Error adding task:", error);
