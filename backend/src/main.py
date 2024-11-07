@@ -40,7 +40,7 @@ redis_client = redis.Redis(
 
 models.Base.metadata.create_all(bind=engine)
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="tasks/token")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -82,7 +82,7 @@ def create_user(user: schemas.UserCreate, db: Session):
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already registered")
     db_user = models.User(
-        username=user.username,
+        username=clean(user.username),
         hashed_password=get_password_hash(user.password),
     )
     db.add(db_user)
@@ -133,7 +133,7 @@ async def get_current_user(
         raise credentials_exception
     return user
 
-@app.post("/token", response_model=schemas.Token)
+@app.post("/tasks/token", response_model=schemas.Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
@@ -152,7 +152,7 @@ async def login_for_access_token(
     )
     return schemas.Token(access_token=access_token, token_type="bearer")
 
-@app.post("/register", response_model=schemas.User)
+@app.post("/tasks/register", response_model=schemas.User)
 async def signup_for_access_token(
     user: schemas.UserCreate,
     db: Session = Depends(get_db),
@@ -161,7 +161,7 @@ async def signup_for_access_token(
     user = create_user(user=user, db=db)
     return user
 
-@app.get("/users/me/", response_model=schemas.User)
+@app.get("/tasks/users/me/", response_model=schemas.User)
 async def read_users_me(
     current_user: Annotated[schemas.User, Depends(get_current_user)],
 ):
@@ -170,7 +170,7 @@ async def read_users_me(
 
 @app.post("/tasks/", response_model=schemas.TaskRetrieve)
 def create_task(
-    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    token: Annotated[str, Depends(oauth2_scheme)],
     task: schemas.TaskCreate,
     db: Session = Depends(get_db)
 ):
@@ -191,7 +191,7 @@ def create_task(
 
 @app.get("/tasks/{task_id}", response_model=schemas.TaskRetrieve)
 def get_task(
-    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    token: Annotated[str, Depends(oauth2_scheme)],
     task_id: int,
     db: Session = Depends(get_db)
 ):
@@ -210,7 +210,7 @@ def get_task(
 
 @app.put("/tasks/{task_id}", response_model=schemas.TaskRetrieve)
 def update_task(
-    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    token: Annotated[str, Depends(oauth2_scheme)],
     task_id: int,
     task: schemas.TaskUpdate,
     db: Session = Depends(get_db)
@@ -235,7 +235,7 @@ def update_task(
 
 @app.delete("/tasks/{task_id}", response_model=schemas.TaskRetrieve)
 def delete_task(
-    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    token: Annotated[str, Depends(oauth2_scheme)],
     task_id: int,
     db: Session = Depends(get_db)
 ):
@@ -250,7 +250,7 @@ def delete_task(
 
 @app.get("/tasks/", response_model=List[schemas.TaskRetrieve])
 def list_tasks(
-    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    token: Annotated[str, Depends(oauth2_scheme)],
     db: Session = Depends(get_db),
     limit: int = 100
 ):

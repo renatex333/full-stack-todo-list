@@ -35,9 +35,9 @@ This backend project is part of a _full-stack_ **to-do list** application. It is
 
 ## Endpoints
 
-- `POST /register`: Register a new user.
-- `POST /token`: Login to get an access token.
-- `GET /users/me/`: Get the current authenticated user.
+- `POST /tasks/register`: Register a new user.
+- `POST /tasks/token`: Login to get an access token.
+- `GET /tasks/users/me/`: Get the current authenticated user.
 - `POST /tasks/`: Create a new task.
 - `GET /tasks/{task_id}`: Retrieve a task by its ID.
 - `PUT /tasks/{task_id}`: Update a task by its ID.
