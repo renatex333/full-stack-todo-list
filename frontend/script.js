@@ -1,4 +1,6 @@
-const apiUrl = "http://localhost:8000/tasks";
+// const apiUrl = "http://localhost:8000/tasks";
+const dns = "";
+const apiUrl = `${dns}:8000/tasks`;
 
 let token = "";
 
